@@ -10,19 +10,19 @@ import NoteForm from '../NoteForm/NoteForm';
 import { fetchNotes } from '../../services/noteService';
 
 export default function App() {
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useState<number>(0);
   const [search, setSearch] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const perPage = 12;
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setSearch(value);
-    setPage(1);
+    setPage(0);
   }, 300);
 
   const { data } = useQuery({
     queryKey: ['notes', page, search],
-    queryFn: () => fetchNotes({ page, perPage, search }),
+    queryFn: () => fetchNotes({ page: page + 1, perPage, search }),
     placeholderData: keepPreviousData,
   });
 
@@ -34,7 +34,7 @@ export default function App() {
         {data && data.totalPages > 1 && (
           <Pagination
             pageCount={data.totalPages}
-            forcePage={page - 1}
+            forcePage={page}
             onPageChange={(targetPage) => setPage(targetPage)}
           />
         )}
