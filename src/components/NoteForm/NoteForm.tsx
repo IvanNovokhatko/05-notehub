@@ -1,12 +1,11 @@
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import css from './NoteForm.module.css';
-import type { CreateNotePayload } from '../../services/noteService';
+import { createNote, type CreateNotePayload } from '../../services/noteService'; // Ensure createNote is imported from your service
 
 interface NoteFormProps {
-  onSubmit: (values: CreateNotePayload) => void;
   onCancel: () => void;
-  isSubmitting: boolean;
 }
 
 const validationSchema = Yup.object().shape({
@@ -27,12 +26,29 @@ const initialValues: CreateNotePayload = {
   tag: 'Todo',
 };
 
-export default function NoteForm({ onSubmit, onCancel, isSubmitting }: NoteFormProps) {
+export default function NoteForm({ onCancel }: NoteFormProps) {
+  const queryClient = useQueryClient();
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (newNote: CreateNotePayload) => createNote(newNote),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      onCancel();
+    },
+    onError: (error) => {
+      console.error('Failed to create note:', error);
+    },
+  });
+
+  const handleSubmit = (values: CreateNotePayload) => {
+    mutate(values);
+  };
+
   return (
     <Formik
       initialValues={initialValues}
       validationSchema={validationSchema}
-      onSubmit={(values) => onSubmit(values)}
+      onSubmit={handleSubmit}
     >
       <Form className={css.form}>
         <div className={css.formGroup}>
@@ -60,11 +76,11 @@ export default function NoteForm({ onSubmit, onCancel, isSubmitting }: NoteFormP
         </div>
 
         <div className={css.actions}>
-          <button type='button' className={css.cancelButton} onClick={onCancel}>
+          <button type='button' className={css.cancelButton} onClick={onCancel} disabled={isPending}>
             Cancel
           </button>
-          <button type='submit' className={css.submitButton} disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create note'}
+          <button type='submit' className={css.submitButton} disabled={isPending}>
+            {isPending ? 'Creating...' : 'Create note'}
           </button>
         </div>
       </Form>
