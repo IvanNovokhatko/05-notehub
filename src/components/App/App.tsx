@@ -23,7 +23,7 @@ export default function App() {
     setPage(1);
   }, 300);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data } = useQuery({
     queryKey: ['notes', page, search],
     queryFn: () => fetchNotes({ page, perPage, search }),
   });
